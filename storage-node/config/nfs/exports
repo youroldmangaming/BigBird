@@ -1,0 +1,8 @@
+# Primary Syncthing Shared Volume
+/shared *(rw,sync,no_subtree_check,no_root_squash,crossmnt)
+
+# Backup Volume
+/backups *(ro,sync,no_subtree_check)
+
+# Optional: Read-only public share
+/public *(ro,sync,no_subtree_check)

@@ -1,0 +1,35 @@
+services:
+  storage-node:
+    image: ubuntu-syncthing-storage
+    build:
+      context: .
+      dockerfile: Dockerfile.storage
+    privileged: true
+    network_mode: host
+    environment:
+      - ZEROTIER_NETWORK_ID=${ZEROTIER_NETWORK_ID}
+      - NODE_NAME=${NODE_NAME:-storage1}
+      - SYNCTHING_UID=1000
+      - SYNCTHING_GID=1000
+    volumes:
+      # Primary shared volumes
+      - ${PRIMARY_SYNC_PATH:-./shared}:/shared
+      - ${BACKUP_SYNC_PATH:-./backups}:/backups
+      - ${PUBLIC_SHARE_PATH:-./public}:/public
+
+      # Configuration volumes (with direct paths)
+      - ./config/syncthing/${NODE_NAME:-storage1}:/etc/syncthing
+      - ./config/samba/${NODE_NAME:-storage1}/smb.conf:/etc/samba/smb.conf:ro
+      - ./config/nfs/${NODE_NAME:-storage1}:/etc/exports.d
+      - ./config/mosquitto/${NODE_NAME:-storage1}/mosquitto.conf:/etc/mosquitto/mosquitto.conf:ro
+      
+      # Persistent data and logs
+      - ./config/zerotier/${NODE_NAME:-storage1}:/var/lib/zerotier-one
+      - ./config/mosquitto/${NODE_NAME:-storage1}/data:/var/lib/mosquitto
+      - ./config/mosquitto/${NODE_NAME:-storage1}/log:/var/log/mosquitto
+      - ./config/samba/${NODE_NAME:-storage1}/log:/var/log/samba
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - NET_RAW

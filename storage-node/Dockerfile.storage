@@ -1,0 +1,75 @@
+FROM ubuntu:latest
+
+# Avoid prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install comprehensive storage and networking packages
+RUN apt-get update && apt-get install -y \
+    # Core system
+    bash curl ca-certificates gnupg lsb-release net-tools \
+    # File sharing protocols
+    samba nfs-kernel-server nfs-common \
+    # Sync and transfer
+    syncthing \
+    # MQTT
+    mosquitto mosquitto-clients \
+    # Additional utilities
+    supervisor python3 python3-pip \
+    python3-paho-mqtt python3-requests \
+    python3-setuptools python3-wheel \
+    dbus \
+    openssl \
+    kmod && \
+    # Add ZeroTier repository and install
+    curl -s 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' | gpg --dearmor > /usr/share/keyrings/zerotier.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/zerotier.gpg] http://download.zerotier.com/debian/jammy jammy main" > /etc/apt/sources.list.d/zerotier.list && \
+    apt-get update && \
+    apt-get install -y zerotier-one && \
+    # Clean up
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create rpcbind user and set up directories
+RUN addgroup --system messagebus && \
+    adduser --system --ingroup messagebus messagebus && \
+    addgroup --system rpcbind && \
+    adduser --system --ingroup rpcbind rpcbind && \
+    mkdir -p /var/lib/nfs/rpc_pipefs \
+    /var/lib/nfs/v4recovery \
+    /var/run/rpcbind \
+    /run/rpcbind && \
+    chown -R rpcbind:rpcbind /var/run/rpcbind /run/rpcbind && \
+    chmod -R 755 /var/run/rpcbind /run/rpcbind && \
+    chown -R root:root /var/lib/nfs && \
+    chmod -R 755 /var/lib/nfs
+
+# Create necessary directories and users
+RUN addgroup --system syncthing \
+    && adduser --system --ingroup syncthing syncthing \
+    && mkdir -p /shared /backups /public /var/log/supervisor /var/syncthing /etc/syncthing \
+    && chown -R syncthing:syncthing /var/syncthing /etc/syncthing \
+    && chown -R nobody:nogroup /shared /backups /public \
+    && chmod -R 777 /shared /backups /public \
+    && touch /var/run/rpcbind/rpcbind.lock \
+    && chown root:root /var/run/rpcbind/rpcbind.lock \
+    && chmod 644 /var/run/rpcbind/rpcbind.lock
+
+# Copy discovery script
+COPY discovery.py /discovery.py
+RUN chmod +x /discovery.py
+
+# Copy entrypoint script and make it executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Copy exports file
+COPY exports /etc/exports
+
+# Create supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Expose ports
+EXPOSE 8384 22000 21027 111/udp 2049 445 139 1883 8883
+
+# Set entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
