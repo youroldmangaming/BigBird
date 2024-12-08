@@ -1,3 +1,0 @@
-/shared *(rw,sync,no_subtree_check,no_root_squash,insecure)
-/backups *(rw,sync,no_subtree_check,no_root_squash,insecure)
-/public *(rw,sync,no_subtree_check,no_root_squash,insecure)
