@@ -100,23 +100,19 @@ class SyncthingDiscoveryManager:
             
             # Get network details
             network_result = subprocess.run(
-                ['zerotier-cli', 'network', 'list'],
+                ['zerotier-cli', 'listnetworks', '-j'],
                 capture_output=True, text=True
             )
-            
+            get_ip_next=False
             for line in network_result.stdout.splitlines():
-                if self.zerotier_network_id in line:
-                    ip_result = subprocess.run(
-                        ['zerotier-cli', 'networkinfo', self.zerotier_network_id, '-j'],
-                        capture_output=True, text=True
-                    )
-                    network_info = json.loads(ip_result.stdout)
-                    
-                    # Extract assigned IP
-                    for assign in network_info.get('assignedAddresses', []):
-                        if '/' in assign:
-                            return assign.split('/')[0]
-            
+                    if get_ip_next == True:
+                        ip=line.split('/')
+                        clean_ip = ip[0].replace('"', '')
+                        return clean_ip
+
+                    if 'assignedAddresses' in line:
+                        get_ip_next=True
+                        continue
             return None
         except Exception as e:
             print(f"Error getting ZeroTier IP: {e}")
@@ -125,9 +121,13 @@ class SyncthingDiscoveryManager:
     def send_device_discovery(self):
         """Broadcast device details via MQTT"""
         zerotier_ip = self.get_zerotier_ip()
+        print("Zerotier IP:",zerotier_ip)
+
         if not zerotier_ip:
             print("No ZeroTier IP available, skipping discovery broadcast")
             return
+
+
 
         discovery_payload = {
             'device_id': self.device_id,
@@ -141,6 +141,7 @@ class SyncthingDiscoveryManager:
                 self.discovery_topic,
                 json.dumps(discovery_payload)
             )
+
         except Exception as e:
             print(f"Error publishing discovery: {e}")
 
@@ -227,3 +228,6 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Fatal error: {e}")
             time.sleep(10)  # Wait before restarting
+
+
+
