@@ -15,12 +15,14 @@ if [ ! -f .env ]; then
     cat > .env << EOL
 # Storage Node Configuration
 NODE_NAME=storage-node-1
-ZEROTIER_NETWORK_ID=
+ZEROTIER_NETWORK_ID=1d71939404640f20
 
 # Shared Directory Paths
 SHARED_DIR=./shared
 BACKUPS_DIR=./backups
 PUBLIC_DIR=./public
+
+ENV SYNC_INTERVAL=300
 
 # Service Ports
 SAMBA_PORT=445

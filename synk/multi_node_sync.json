@@ -1,0 +1,9 @@
+{
+    "shared_directory": "/shared",
+    "nodes": [
+        {
+            "hostname": "localhost",
+            "remote_path": "/shared"
+        }
+    ]
+}

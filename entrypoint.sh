@@ -125,6 +125,8 @@ if netstat -tuln | grep -q ":9993 "; then
     exit 1
 fi
 
+
+
 # Store ZeroTier network ID for supervisor to use
 if [ -n "$ZEROTIER_NETWORK_ID" ]; then
     log_msg "Storing ZeroTier network ID: $ZEROTIER_NETWORK_ID"
@@ -141,3 +143,6 @@ chmod -R 755 /var/run/mosquitto /etc/mosquitto /var/lib/mosquitto /var/log/mosqu
 # Start supervisord
 log_msg "Starting supervisord..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
+
+
+exec python3 /sync/glue.py

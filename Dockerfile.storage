@@ -48,6 +48,7 @@ RUN addgroup --system messagebus && \
     chown -R root:root /var/lib/nfs && \
     chmod -R 755 /var/lib/nfs
 
+
 # Create necessary directories and users
 RUN addgroup --system syncthing \
     && adduser --system \
@@ -130,6 +131,15 @@ RUN mkdir -p /var/log/mosquitto \
 COPY mosquitto.conf /etc/mosquitto/conf.d/default.conf
 RUN chmod 644 /etc/mosquitto/conf.d/default.conf \
     && chown mosquitto:mosquitto /etc/mosquitto/conf.d/default.conf
+
+
+RUN mkdir synk
+COPY ./synk/glue.py ./synk/glue.py 
+RUN chmod +x ./sync/glue.py
+COPY ./synk/multi_node_sync.json ./synk/multi_node_sync.json 
+
+
+
 
 # Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
