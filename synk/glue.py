@@ -33,7 +33,7 @@ class DynamicNodeConfigManager:
         self.config_path = config_path
         self.shared_directory = shared_directory
         self.local_hostname = socket.gethostname()
-        self.network_id = os.getenv('NETWORK_ID', '17d709436c9787ee')
+        self.network_id = os.getenv('ZEROTIER_NETWORK_ID', '17d709436c9787ee')
         self.sync_interval = int(os.getenv('SYNC_INTERVAL', '300'))
         
         # Ensure config file exists
@@ -59,7 +59,7 @@ class DynamicNodeConfigManager:
 
 
     def load_config(self):
-        """Load configuration from JSON file"""
+        print(  """Load configuration from JSON file""")
         try:
             with open(self.config_path, 'r') as f:
                 return json.load(f)
@@ -137,7 +137,7 @@ class DynamicNodeConfigManager:
 
     
     def update_config(self):
-        """Dynamically update configuration with new network members"""
+        print("""Dynamically update configuration with new network members""")
         # Load existing configuration
         config = self.load_config()
         
@@ -173,7 +173,7 @@ class DynamicNodeConfigManager:
 
 
     def run(self):
-        """Continuously monitor and update network configuration"""
+        print( """Continuously monitor and update network configuration""")
         while True:
             try:
                 self.update_config()
@@ -195,3 +195,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
