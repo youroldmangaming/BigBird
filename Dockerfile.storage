@@ -135,10 +135,10 @@ RUN chmod 644 /etc/mosquitto/conf.d/default.conf \
 
 RUN mkdir synk
 COPY ./synk/glue.py ./synk/glue.py 
+COPY ./synk/MultiNodeSync.py ./synk/MultiNodeSync.py
+ 
 RUN chmod +x ./synk/glue.py
-COPY ./synk/multi_node_sync.json ./synk/multi_node_sync.json 
-
-
+RUN chmod +x ./synk/MultiNodeSync.py
 
 
 # Set entrypoint
