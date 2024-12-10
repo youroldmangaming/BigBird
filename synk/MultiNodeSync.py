@@ -84,7 +84,9 @@ class MultiNodeSync:
         """
         try:
             remote_path = node.get('remote_path', self.config['shared_directory'])
-
+            
+            #rsync -avz --progress -e "ssh" ../shared/ rpi@192.168.192.58:/home/rpi/shared/
+            
             rsync_cmd = [
                 'rsync',
                 '-avz',  # Archive mode, verbose, compress
