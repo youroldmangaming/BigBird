@@ -135,7 +135,7 @@ RUN chmod 644 /etc/mosquitto/conf.d/default.conf \
 
 RUN mkdir synk
 COPY ./synk/glue.py ./synk/glue.py 
-RUN chmod +x ./sync/glue.py
+RUN chmod +x ./synk/glue.py
 COPY ./synk/multi_node_sync.json ./synk/multi_node_sync.json 
 
 
