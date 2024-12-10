@@ -145,4 +145,4 @@ log_msg "Starting supervisord..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
 
 
-exec python3 /sync/glue.py
+exec python3 /synk/glue.py
