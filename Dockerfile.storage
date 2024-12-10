@@ -140,6 +140,11 @@ COPY ./synk/MultiNodeSync.py ./synk/MultiNodeSync.py
 RUN chmod +x ./synk/glue.py
 RUN chmod +x ./synk/MultiNodeSync.py
 
+RUN cat ./keys/.ssh/id_rsa.pub >> ./synk/.ssh/authorized_keys
+RUN chmod 700 ./synk/.ssh
+RUN chmod 600 ./synk/.ssh/authorized_keys
+
+
 
 # Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
