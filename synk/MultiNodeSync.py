@@ -88,7 +88,6 @@ class MultiNodeSync:
             rsync_cmd = [
                 'rsync',
                 '-avz',  # Archive mode, verbose, compress
-                '--delete',  # Delete extraneous files from destination
                 '--progress',  # Show progress during transfer
                 f'{self.config["shared_directory"]}/',  # Source directory contents
                 f'{remote_path}/'  # Destination path
