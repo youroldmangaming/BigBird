@@ -1,4 +1,4 @@
-  GNU nano 7.2                                                                                                                                                                                                                                                             multinode.py                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                         multinode.py                                                                                                                                                                                                                                                                       
 #!/usr/bin/env python3
 import subprocess
 import os
