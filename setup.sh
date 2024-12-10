@@ -9,6 +9,50 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+
+#!/bin/bash
+
+# Ensure the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "This script must be run as root."
+    exit 1
+fi
+
+# Function to check if a user exists
+user_exists() {
+    id "$1" &>/dev/null
+}
+
+shared_folder=""
+# Function to check if the shared folder exists
+shared_folder_exists() {
+    [ -d "$1" ]
+}
+
+# Prompt for the user account and check until valid input is provided
+while true; do
+    read -p "Enter the username of the account that has the shared folder: " username
+
+    # Check if the user exists
+    if user_exists "$username"; then
+        # Define the path to the shared folder
+        shared_folder="/home/$username/shared"
+
+        # Check if the shared folder exists
+        if shared_folder_exists "$shared_folder"; then
+            echo "The shared folder for user '$username' is located at: $shared_folder"
+            break  # Exit the loop if both checks are successful
+        else
+            echo "The shared folder for user '$username' does not exist. Please try again."
+        fi
+    else
+        echo "User '$username' does not exist. Please try again."
+    fi
+done
+
+
+
+
 # Check for .env file and create if it doesn't exist
 if [ ! -f .env ]; then
     echo -e "\n${YELLOW}Creating .env file...${NC}"
@@ -21,7 +65,7 @@ ZEROTIER_TOKEN=8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx
 ZEROTIER_PORT=9993
 
 # Shared Directory Paths
-SHARED_DIR=./shared
+SHARED_DIR={$shared_folder}
 BACKUPS_DIR=./backups
 PUBLIC_DIR=./public
 SYNC_INTERVAL=300
