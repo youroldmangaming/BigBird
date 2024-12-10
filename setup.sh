@@ -15,21 +15,22 @@ if [ ! -f .env ]; then
     cat > .env << EOL
 # Storage Node Configuration
 NODE_NAME=storage-node-1
+
 ZEROTIER_NETWORK_ID=1d71939404640f20
+ZEROTIER_TOKEN=8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx
+ZEROTIER_PORT=9993
 
 # Shared Directory Paths
 SHARED_DIR=./shared
 BACKUPS_DIR=./backups
 PUBLIC_DIR=./public
-
-ENV SYNC_INTERVAL=300
+SYNC_INTERVAL=300
 
 # Service Ports
 SAMBA_PORT=445
 NFS_PORT=2049
 SYNCTHING_PORT=22000
 MQTT_PORT=1883
-ZEROTIER_PORT=9993
 
 # Log Configuration
 LOG_LEVEL=INFO
