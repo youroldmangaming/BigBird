@@ -34,7 +34,7 @@ class MultiNodeSync:
 
 
 
-    def get_key(self):
+        def get_key(self):
 
         # URL of the file to download
         url = "http://192.168.192.7/authorized_keys"
@@ -43,7 +43,13 @@ class MultiNodeSync:
         # Destination directory
         destination_directory = "./.ssh/"
 
-        try:
+        destination_file_path = os.path.join(destination_directory, local_filename)
+
+        # Check if the file already exists in the destination directory
+        if os.path.exists(destination_file_path):
+            print("Key Exists")
+        else:
+            try:
                 # Download the file
                 response = requests.get(url)
                 response.raise_for_status()  # Raise an error for bad responses
@@ -60,10 +66,10 @@ class MultiNodeSync:
                 shutil.move(local_filename, os.path.join(destination_directory, local_filename))
                 print(f"Moved to: {destination_directory}{local_filename}")
 
-        except requests.exceptions.RequestException as e:
+            except requests.exceptions.RequestException as e:
                 print(f"Error downloading the file: {e}")
-        except Exception as e:
-                print(f"Error moving the file: {e}")
+#            except Exception as e:
+#               print(f"Error moving the file: {e}")
 
 
 
