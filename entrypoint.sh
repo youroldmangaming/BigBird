@@ -144,5 +144,8 @@ chmod -R 755 /var/run/mosquitto /etc/mosquitto /var/lib/mosquitto /var/log/mosqu
 log_msg "Starting supervisord..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
 
-cp /synk/.ssh/authorized_keys "$SHARED_DIR/.ssh/authorized_keys"
+#cp /synk/.ssh/authorized_keys "$SHARED_DIR/.ssh/authorized_keys"
+
+#wget  http://192.168.192.7/authorized_keys
+#mv authorized_keys ./synk/.ssh/
 exec python3 /synk/glue.py
