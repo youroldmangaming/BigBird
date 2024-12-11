@@ -16,15 +16,16 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+
+
 # Function to check if a user exists
 user_exists() {
-    id "$1" &>/dev/null
+    grep -q "^$1:" /etc/passwd
 }
 
-shared_folder=""
-# Function to check if the shared folder exists
-shared_folder_exists() {
-    [ -d "$1" ]
+# Function to check if the home directory exists
+home_directory_exists() {
+    [ -d "/home/$1" ]
 }
 
 # Prompt for the user account and check until valid input is provided
@@ -33,20 +34,28 @@ while true; do
 
     # Check if the user exists
     if user_exists "$username"; then
-        # Define the path to the shared folder
+        echo "User '$username' exists."
+
+        # Define the shared folder path
         shared_folder="/home/$username/shared"
 
         # Check if the shared folder exists
-        if shared_folder_exists "$shared_folder"; then
+        if [ -d "$shared_folder" ]; then
             echo "The shared folder for user '$username' is located at: $shared_folder"
-            break  # Exit the loop if both checks are successful
+            break  # Exit the loop if the shared folder exists
         else
-            echo "The shared folder for user '$username' does not exist. Please try again."
+            echo "The shared folder for user '$username' does not exist."
+            echo "Creating it now: $shared_folder"
+            mkdir -p "$shared_folder" 
+            echo "Shared folder created."
+            break; 
         fi
     else
         echo "User '$username' does not exist. Please try again."
     fi
 done
+
+
 
 
 
