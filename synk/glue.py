@@ -1,4 +1,4 @@
-
+                                                                                                                                                                                                                                            glue.py                                                                                                                                                                                                                                                      #!/usr/bin/env python3
 import os
 import subprocess
 import json
@@ -85,19 +85,20 @@ class DynamicNodeConfigManager:
                 member_id = member.get("id")
                 last_seen = member.get("lastSeen")
                 physical_address = member.get("physicalAddress")
-                zerotier_ip = member.get("config", {}).get("ipAssignments", [None])[0]  # Safely get the first IP if available
-                name = member.get("name")
+                self.zerotier_ip = member.get("config", {}).get("ipAssignments", [None])[0]  # Safely get the first IP if available
+                self.name = member.get("name")
 
                 # Print the results
                 print(f"Member ID: {member_id}")
                 print(f"Last Seen: {last_seen}")
                 print(f"Physical Address: {physical_address}")
-                print(f"ZeroTier IP Address: {zerotier_ip}")
+                print(f"ZeroTier IP Address: {self.zerotier_ip}")
                 print()  # Blank line for readability
 
                 # Append the member's details to the network_members list
                 network_members.append({
-                    'hostname': zerotier_ip,
+                    'hostname': self.name,
+                    'ip': self.zerotier_ip,
                     'remote_path': self.shared_directory
                 })
 
@@ -106,6 +107,10 @@ class DynamicNodeConfigManager:
         else:
             print(f"Failed to retrieve data: {response.status_code} - {response.text}")
             return []
+
+
+
+
 
     def update_config(self):
         """Dynamically update configuration with new network members"""
@@ -126,10 +131,12 @@ class DynamicNodeConfigManager:
             if member['hostname'] == self.local_hostname:
                 continue
 
+            #rsync -avz --progress -e "ssh" ../shared/ rpi@192.168.192.58:/home/rpi/shared/
             # Add only if not already in config
             if member['hostname'] not in existing_hostnames:
                 config['nodes'].append({
                     'hostname': member['hostname'],
+                    'ip': member['ip'],                
                     'remote_path': member['remote_path']
                 })
                 logging.info(f"Added new node: {member['hostname']}")
@@ -158,15 +165,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
