@@ -119,7 +119,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 
 # Expose ports
-EXPOSE 8384 22000 21027 111/udp 2049 445 139 1883 8883 8080 80 
+EXPOSE 8384 22000 21027 111/udp 2049 445 139 1883 8883 8080 80
 
 # Set up MQTT directories and config
 RUN mkdir -p /var/log/mosquitto \
@@ -134,15 +134,16 @@ RUN chmod 644 /etc/mosquitto/conf.d/default.conf \
 
 
 RUN mkdir synk
-COPY ./synk/glue.py ./synk/glue.py 
+COPY ./synk/glue.py ./synk/glue.py
 COPY ./synk/MultiNodeSync.py ./synk/MultiNodeSync.py
- 
+
 RUN chmod +x ./synk/glue.py
 RUN chmod +x ./synk/MultiNodeSync.py
 
-RUN cat ./keys/.ssh/id_rsa.pub >> ./synk/.ssh/authorized_keys
+#RUN cat ./keys/.ssh/id_rsa.pub >> ./synk/.ssh/authorized_keys
+RUN mkdir -p ./synk/.ssh/
 RUN chmod 700 ./synk/.ssh
-RUN chmod 600 ./synk/.ssh/authorized_keys
+#RUN chmod 600 ./synk/.ssh/authorized_keys
 
 
 
