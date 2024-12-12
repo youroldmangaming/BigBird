@@ -23,6 +23,7 @@ class DynamicNodeConfigManager:
         self.shared_directory = shared_directory
         self.local_hostname = socket.gethostname()
         self.network_id = os.getenv('NETWORK_ID', '1d71939404640f20')
+        self.username = os.getenv('USERNAME')
         self.api_token = '8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx'
         self.sync_interval = int(os.getenv('SYNC_INTERVAL', '300'))
 
@@ -109,6 +110,28 @@ class DynamicNodeConfigManager:
 
 
 
+    
+    def update_node_config(ip, hostname, username, remote_path):
+      url = "http://mini:3000/api/config"
+      headers = {"Content-Type": "application/json"}
+      data = {
+        "ip": ip,
+        "hostname": hostname,
+        "username": username,
+        "remote_path": remote_path
+      }
+
+      try:
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        response.raise_for_status()  # Raise an error for bad responses
+        print("Configuration updated successfully:", response.json())
+      except requests.exceptions.RequestException as e:
+        print(f"Error updating configuration: {e}")
+
+
+
+
+    
 
 
     def update_config(self):
@@ -128,6 +151,7 @@ class DynamicNodeConfigManager:
         for member in network_members:
             # Skip local host
             if member['hostname'] == self.local_hostname:
+                update_node_config(member['ip'], self.local_hostname , self.username, self.shared_directory)
                 continue
 
             #rsync -avz --progress -e "ssh" ../shared/ rpi@192.168.192.58:/home/rpi/shared/
