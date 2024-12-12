@@ -28,6 +28,8 @@ home_directory_exists() {
     [ -d "/home/$1" ]
 }
 
+username=""
+
 # Prompt for the user account and check until valid input is provided
 while true; do
     read -p "Enter the username of the account that has the shared folder: " username
@@ -70,7 +72,7 @@ NODE_NAME=storage-node-1
 ZEROTIER_NETWORK_ID=1d71939404640f20
 ZEROTIER_TOKEN=8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx
 ZEROTIER_PORT=9993
-
+USERNAME={$userame}
 # Shared Directory Paths
 SHARED_DIR={$shared_folder}
 BACKUPS_DIR=./backups
@@ -178,3 +180,5 @@ var/
 EOL
 
 echo -e "\n${GREEN}Setup script completed successfully!${NC}"
+
+
