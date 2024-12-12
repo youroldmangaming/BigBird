@@ -11,6 +11,7 @@ services:
       - NODE_NAME=${NODE_NAME:-storage1}
       - SYNCTHING_UID=1000
       - SYNCTHING_GID=1000
+      - USERNAME=${USERNAME}
 #    user: "1000:1000"
     volumes:
       # Primary shared volumes
