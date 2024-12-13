@@ -1,3 +1,4 @@
+                                                                                                                                                                                                                                          glue.py                                                                                                                                                                                                                                                              
 import os
 import subprocess
 import json
@@ -51,6 +52,9 @@ class DynamicNodeConfigManager:
                 "nodes": []
             }
 
+
+
+
     def save_config(self, config):
         """Save configuration to JSON file"""
         try:
@@ -59,6 +63,9 @@ class DynamicNodeConfigManager:
             logging.info(f"Updated configuration saved to {self.config_path}")
         except Exception as e:
             logging.error(f"Error saving config: {e}")
+
+
+
 
     def get_zerotier_network_members(self):
         """Retrieve ZeroTier network members"""
@@ -110,15 +117,16 @@ class DynamicNodeConfigManager:
 
 
 
-    
-    def update_node_config(ip, hostname, username, remote_path):
+
+    def update_node_config(self,ip):
       url = "http://mini:3000/api/config"
+      print(url)
       headers = {"Content-Type": "application/json"}
       data = {
         "ip": ip,
-        "hostname": hostname,
-        "username": username,
-        "remote_path": remote_path
+        "hostname": self.local_hostname,
+        "username": self.username,
+        "remote_path": self.shared_directory
       }
 
       try:
@@ -151,7 +159,15 @@ class DynamicNodeConfigManager:
         for member in network_members:
             # Skip local host
             if member['hostname'] == self.local_hostname:
-                update_node_config(member['ip'], self.local_hostname , self.username, self.shared_directory)
+                print(member['ip'])
+                print(self.local_hostname)
+                print(self.username) 
+                print(self.shared_directory)
+
+                ip=member['ip']
+
+
+                self.update_node_config(ip)
                 continue
 
             #rsync -avz --progress -e "ssh" ../shared/ rpi@192.168.192.58:/home/rpi/shared/
