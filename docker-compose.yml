@@ -12,6 +12,7 @@ services:
       - SYNCTHING_UID=1000
       - SYNCTHING_GID=1000
       - USERNAME=${USERNAME}
+      - SHARED_DIR=${SHARED_DIR}     
 #    user: "1000:1000"
     volumes:
       # Primary shared volumes
