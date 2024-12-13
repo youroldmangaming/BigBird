@@ -34,7 +34,7 @@ class MultiNodeSync:
 
 
 
-        def get_key(self):
+    def get_key(self):
 
         # URL of the file to download
         url = "http://192.168.192.7/authorized_keys"
@@ -75,6 +75,8 @@ class MultiNodeSync:
 
 
 
+
+
     def load_config(self, config_path):
         """
         Load sync configuration from JSON file
@@ -89,6 +91,14 @@ class MultiNodeSync:
             logging.error(f"Error loading config: {e}")
             raise
 
+
+
+
+
+
+
+
+
     def validate_config(self):
         """
         Validate sync configuration
@@ -102,6 +112,12 @@ class MultiNodeSync:
         shared_dir = Path(self.config['shared_directory'])
         if not shared_dir.exists():
             raise FileNotFoundError(f"Shared directory not found: {shared_dir}")
+
+
+
+
+
+
 
     def calculate_directory_hash(self, directory):
         """
@@ -123,6 +139,38 @@ class MultiNodeSync:
 
         return hasher.hexdigest()
 
+
+
+
+
+
+    def fetch_config(self, node_ip):
+        ip = '192.168.192.7'  # Replace with the actual IP if needed
+        username = 'your_username'  # Replace with the actual username
+        remote_path = '/api/config/node?ip='+node_ip  # The remote path for the API
+
+        try:
+            print('http://{ip}:3000{remote_path}') 
+            response = requests.get(f'http://{ip}:3000{remote_path}')
+            response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
+        
+            # Assuming the response JSON contains keys 'ip', 'username', 'remote_path'
+            config_data = response.json()
+            ip = config_data.get('ip', ip)  # Fallback to the default if not present
+            username = config_data.get('username', username)  # Fallback to the default if not present
+            remote_path = config_data.get('remote_path', remote_path)  # Fallback to the default if not present
+      
+            print('Configuration:', config_data)
+        except requests.exceptions.RequestException as error:
+            print('Error fetching configuration:', error)
+            return None, None, None  # Return None values if there's an error
+
+        return ip, username, remote_path
+
+
+
+
+
     def sync_to_node(self, node):
         """
         Synchronize files to a specific node without SSH
@@ -130,10 +178,29 @@ class MultiNodeSync:
         :param node: Node configuration dictionary
         """
         try:
-            remote_path = node.get('remote_path', self.config['shared_directory'])
+            #remote_path = node.get('remote_path', self.config['shared_directory'])
             
             #rsync -avz --progress -e "ssh" ../shared/ rpi@192.168.192.58:/home/rpi/shared/
             
+            print("--------------------------------------")
+            #self.fetch_config()
+            ip, username, remote_path = self.fetch_config(node['ip'])
+
+            # Check if fetch_config returned None values
+            if ip is None or username is None or remote_path is None:
+               logging.error(f"Failed to fetch configuration for node {node['hostname']}. Sync aborted.")
+               return  # Exit the function early if fetch_config failed
+
+
+
+
+            print(f'IP: {ip}, Username: {username}, Remote Path: {remote_path}')
+
+            print(remote_path)
+            print(self.config["shared_directory"])
+            print("--------------------------------------")
+
+
             rsync_cmd = [
                 'rsync',
                 '-avz',  # Archive mode, verbose, compress
@@ -154,6 +221,11 @@ class MultiNodeSync:
         except Exception as e:
             logging.error(f"Error syncing to {node['hostname']}: {e}")
 
+
+
+
+
+
     def run_sync(self):
         """
         Synchronize files across all configured nodes
@@ -173,6 +245,10 @@ class MultiNodeSync:
 
         if local_hash_before != local_hash_after:
             logging.warning("Local directory changed during sync")
+
+
+
+
 
     def continuous_sync(self, interval=300):
         """
