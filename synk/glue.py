@@ -1,4 +1,3 @@
-                                                                                                                                                                                                                                          glue.py                                                                                                                                                                                                                                                              
 import os
 import subprocess
 import json
@@ -6,6 +5,7 @@ import logging
 import time
 import socket
 import requests
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(
@@ -15,18 +15,14 @@ logging.basicConfig(
 )
 
 class DynamicNodeConfigManager:
-    def __init__(
-        self,
-        config_path='multi_node_sync.json',
-        shared_directory='/shared'
-    ):
+    def __init__(self, config_path='multi_node_sync.json', shared_directory='/shared'):
         self.config_path = config_path
         self.shared_directory = shared_directory
         self.local_hostname = socket.gethostname()
         self.network_id = os.getenv('NETWORK_ID', '1d71939404640f20')
         self.username = os.getenv('USERNAME')
         self.api_token = '8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx'
-        self.sync_interval = int(os.getenv('SYNC_INTERVAL', '300'))
+        self.sync_interval = int(os.getenv('SYNC_INTERVAL', '60'))  # Set to 60 seconds
 
         # Ensure config file exists
         self.initialize_config_file()
@@ -52,9 +48,6 @@ class DynamicNodeConfigManager:
                 "nodes": []
             }
 
-
-
-
     def save_config(self, config):
         """Save configuration to JSON file"""
         try:
@@ -64,18 +57,12 @@ class DynamicNodeConfigManager:
         except Exception as e:
             logging.error(f"Error saving config: {e}")
 
-
-
-
     def get_zerotier_network_members(self):
         """Retrieve ZeroTier network members"""
         url = f"https://api.zerotier.com/api/v1/network/{self.network_id}/member"
         headers = {
-            "Authorization": f"token {self.api_token}"  # Corrected formatting
+            "Authorization": f"token {self.api_token}"
         }
-
-        print(url)
-        print(headers)
 
         # Make the API request
         response = requests.get(url, headers=headers)
@@ -83,8 +70,6 @@ class DynamicNodeConfigManager:
         # Check if the request was successful
         if response.status_code == 200:
             members = response.json()
-            print(members)
-
             network_members = []  # Initialize the list outside the loop
 
             # Extract and print the desired information
@@ -95,51 +80,44 @@ class DynamicNodeConfigManager:
                 self.zerotier_ip = member.get("config", {}).get("ipAssignments", [None])[0]  # Safely get the first IP if available
                 self.name = member.get("name")
 
-                # Print the results
-                print(f"Member ID: {member_id}")
-                print(f"Last Seen: {last_seen}")
-                print(f"Physical Address: {physical_address}")
-                print(f"ZeroTier IP Address: {self.zerotier_ip}")
-                print()  # Blank line for readability
-
                 # Append the member's details to the network_members list
                 network_members.append({
                     'hostname': self.name,
                     'ip': self.zerotier_ip,
+                    'last_seen': last_seen,  # Include last_seen timestamp
                     'remote_path': self.shared_directory
                 })
 
             return network_members
 
         else:
-            print(f"Failed to retrieve data: {response.status_code} - {response.text}")
+            logging.error(f"Failed to retrieve data: {response.status_code} - {response.text}")
             return []
 
+    def update_node_config(self, ip):
+        print("update this nodes shared_directory")
+        url = "http://mini:3000/api/config"
+        headers = {"Content-Type": "application/json"}
+        data = {
+            "ip": ip,
+            "hostname": self.local_hostname,
+            "username": self.username,
+            "remote_path": self.shared_directory
+        }
+
+        try:
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+            response.raise_for_status()  # Raise an error for bad responses
+            logging.info("Configuration updated successfully:", response.json())
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error updating configuration: {e}")
 
 
 
-    def update_node_config(self,ip):
-      url = "http://mini:3000/api/config"
-      print(url)
-      headers = {"Content-Type": "application/json"}
-      data = {
-        "ip": ip,
-        "hostname": self.local_hostname,
-        "username": self.username,
-        "remote_path": self.shared_directory
-      }
-
-      try:
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-        response.raise_for_status()  # Raise an error for bad responses
-        print("Configuration updated successfully:", response.json())
-      except requests.exceptions.RequestException as e:
-        print(f"Error updating configuration: {e}")
 
 
 
 
-    
 
 
     def update_config(self):
@@ -156,26 +134,37 @@ class DynamicNodeConfigManager:
         # Add new members to configuration
         existing_hostnames = {node['hostname'] for node in config.get('nodes', [])}
 
+        # Current time for comparison
+        current_time = datetime.now()
+
+        # Remove nodes older than 10 minutes
+        new_nodes = []
+        for node in config['nodes']:
+            last_seen = node.get('last_seen')
+            if isinstance(last_seen, (int, float)):  # Check if last_seen is a number (timestamp)
+                last_seen_time = datetime.fromtimestamp(last_seen / 1000)  # Convert milliseconds to seconds
+                # Check if the node is older than 10 minutes
+                if (current_time - last_seen_time) < timedelta(minutes=10):
+                    new_nodes.append(node)  # Keep the node
+            else:
+                logging.warning(f"No valid last_seen timestamp for node {node['hostname']}, removing it.")
+                continue  # Skip this node if last_seen is not a valid timestamp
+
+        config['nodes'] = new_nodes  # Update the nodes list with valid nodes
+
         for member in network_members:
             # Skip local host
             if member['hostname'] == self.local_hostname:
-                print(member['ip'])
-                print(self.local_hostname)
-                print(self.username) 
-                print(self.shared_directory)
-
-                ip=member['ip']
-
-
+                ip = member['ip']
                 self.update_node_config(ip)
                 continue
 
-            #rsync -avz --progress -e "ssh" ../shared/ rpi@192.168.192.58:/home/rpi/shared/
             # Add only if not already in config
             if member['hostname'] not in existing_hostnames:
                 config['nodes'].append({
                     'hostname': member['hostname'],
-                    'ip': member['ip'],                
+                    'ip': member['ip'],
+                    'last_seen': member['last_seen'],  # Add last_seen timestamp
                     'remote_path': member['remote_path']
                 })
                 logging.info(f"Added new node: {member['hostname']}")
@@ -184,6 +173,15 @@ class DynamicNodeConfigManager:
         # Save updated configuration if changes were made
         if config_updated:
             self.save_config(config)
+
+
+
+
+
+
+
+
+
 
     def run(self):
         """Continuously monitor and update network configuration"""
@@ -204,6 +202,18 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
