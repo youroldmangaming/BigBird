@@ -72,9 +72,9 @@ NODE_NAME=storage-node-1
 ZEROTIER_NETWORK_ID=1d71939404640f20
 ZEROTIER_TOKEN=8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx
 ZEROTIER_PORT=9993
-USERNAME={$userame}
+USERNAME=$username
 # Shared Directory Paths
-SHARED_DIR={$shared_folder}
+SHARED_DIR=$shared_folder
 BACKUPS_DIR=./backups
 PUBLIC_DIR=./public
 SYNC_INTERVAL=300
@@ -180,5 +180,3 @@ var/
 EOL
 
 echo -e "\n${GREEN}Setup script completed successfully!${NC}"
-
-
