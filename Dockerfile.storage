@@ -1,126 +1,102 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Pacific/Auckland
+
+# Install tzdata and set timezone
+RUN apt-get update && apt-get install -y \
+    tzdata && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+# Install SSH server
+RUN apt-get update && apt-get install -y \
+    openssh-server && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+# Create SSH directory
+RUN mkdir -p /root/.ssh
+
 
 # Install comprehensive storage and networking packages
 RUN apt-get update && apt-get install -y \
-    # Core system
     bash curl ca-certificates gnupg lsb-release net-tools \
-    # File sxaharing protocols
     samba nfs-kernel-server nfs-common \
-    # Sync and transfer
     syncthing \
-    # MQTT
     mosquitto mosquitto-clients \
-    # Additional utilities
     supervisor python3 python3-pip \
     python3-paho-mqtt python3-requests \
     python3-setuptools python3-wheel \
-    dbus \
-    rsync \
-    nano \
-    openssl \
-    openssh \
-    kmod && \
-    # Add ZeroTier repository and install
+    dbus rsync nano kmod && \
     curl -s 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' | gpg --dearmor > /usr/share/keyrings/zerotier.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/zerotier.gpg] http://download.zerotier.com/debian/jammy jammy main" > /etc/apt/sources.list.d/zerotier.list && \
     apt-get update && \
     apt-get install -y zerotier-one && \
-
-
-
-    # Clean up
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /root/.ssh
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the SSH keys into the container
 COPY ./keys/id_rsa /root/.ssh/id_rsa
 COPY ./keys/id_rsa.pub /root/.ssh/id_rsa.pub
 COPY ./keys/id_rsa.pub /root/.ssh/authorized_keys
 
-
 # Set permissions for the SSH keys
 RUN chmod 700 /root/.ssh && \
     chmod 600 /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/authorized_keys
 
-# Start the SSH service
-RUN /usr/sbin/sshd -D
-
-
-
-# Create rpcbind user and set up directories
+# Create necessary directories and users
 RUN addgroup --system messagebus && \
     adduser --system --ingroup messagebus messagebus && \
     addgroup --system rpcbind && \
     adduser --system --ingroup rpcbind rpcbind && \
-    mkdir -p /var/lib/nfs/rpc_pipefs \
-    /var/lib/nfs/v4recovery \
-    /var/run/rpcbind \
-    /run/rpcbind && \
+    mkdir -p /var/lib/nfs/rpc_pipefs /var/lib/nfs/v4recovery /var/run/rpcbind /run/rpcbind && \
     chown -R rpcbind:rpcbind /var/run/rpcbind /run/rpcbind && \
     chmod -R 755 /var/run/rpcbind /run/rpcbind && \
     chown -R root:root /var/lib/nfs && \
     chmod -R 755 /var/lib/nfs
 
-
-# Create necessary directories and users
-RUN addgroup --system syncthing \
-    && adduser --system \
-       --shell /bin/bash \
-       --home /home/syncthing \
-       --ingroup syncthing \
-       --gecos "Syncthing Service User" \
-       syncthing \
-    && mkdir -p /shared /backups /public /var/log/supervisor /var/syncthing /etc/syncthing \
-    && mkdir -p /run/sendsigs.omit.d \
-    && chmod 755 /run/sendsigs.omit.d \
-    && chown -R syncthing:syncthing /var/syncthing /etc/syncthing /home/syncthing \
-    && chown -R nobody:nogroup /shared /backups /public \
-    && chmod -R 777 /shared /backups /public \
-    && touch /var/run/rpcbind/rpcbind.lock \
-    && chown root:root /var/run/rpcbind/rpcbind.lock \
-    && chmod 644 /var/run/rpcbind/rpcbind.lock
-
-# Create necessary configuration fi
-
-
+# Create syncthing user
+RUN addgroup --system syncthing && \
+    adduser --system --shell /bin/bash --home /home/syncthing --ingroup syncthing --gecos "Syncthing Service User" syncthing && \
+    mkdir -p /shared /backups /public /var/log/supervisor /var/syncthing /etc/syncthing && \
+    mkdir -p /run/sendsigs.omit.d && \
+    chmod 755 /run/sendsigs.omit.d && \
+    chown -R syncthing:syncthing /var/syncthing /etc/syncthing /home/syncthing && \
+    chown -R nobody:nogroup /shared /backups /public && \
+    chmod -R 777 /shared /backups /public && \
+    touch /var/run/rpcbind/rpcbind.lock && \
+    chown root:root /var/run/rpcbind/rpcbind.lock && \
+    chmod 644 /var/run/rpcbind/rpcbind.lock
 
 # Install File Browser
 RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
-
 # Configure Samba
-RUN mkdir -p /var/lib/samba \
-    && mkdir -p /var/cache/samba \
-    && mkdir -p /var/log/samba \
-    && mkdir -p /var/run/samba \
-    && chmod 755 /var/run/samba \
-    && echo "[global]" > /etc/samba/smb.conf \
-    && echo "   workgroup = WORKGROUP" >> /etc/samba/smb.conf \
-    && echo "   server string = %h server" >> /etc/samba/smb.conf \
-    && echo "   log file = /var/log/samba/log.%m" >> /etc/samba/smb.conf \
-    && echo "   max log size = 1000" >> /etc/samba/smb.conf \
-    && echo "   logging = file" >> /etc/samba/smb.conf \
-    && echo "   panic action = /usr/share/samba/panic-action %d" >> /etc/samba/smb.conf \
-    && echo "   server role = standalone server" >> /etc/samba/smb.conf \
-    && echo "   obey pam restrictions = yes" >> /etc/samba/smb.conf \
-    && echo "   unix password sync = yes" >> /etc/samba/smb.conf \
-    && echo "   passwd program = /usr/bin/passwd %u" >> /etc/samba/smb.conf \
-    && echo "   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* ." >> /etc/samba/smb.conf \
-    && echo "   pam password change = yes" >> /etc/samba/smb.conf \
-    && echo "   map to guest = bad user" >> /etc/samba/smb.conf \
-    && echo "   usershare allow guests = yes" >> /etc/samba/smb.conf \
-    && echo "[public]" >> /etc/samba/smb.conf \
-    && echo "   path = /public" >> /etc/samba/smb.conf \
-    && echo "   public = yes" >> /etc/samba/smb.conf \
-    && echo "   writable = yes" >> /etc/samba/smb.conf \
-    && echo "   guest ok = yes" >> /etc/samba/smb.conf \
-    && echo "   guest only = yes" >> /etc/samba/smb.conf
+RUN mkdir -p /var/lib/samba /var/cache/samba /var/log/samba /var/run/samba && \
+    chmod 755 /var/run/samba && \
+    echo "[global]" > /etc/samba/smb.conf && \
+    echo "   workgroup = WORKGROUP" >> /etc/samba/smb.conf && \
+    echo "   server string = %h server" >> /etc/samba/smb.conf && \
+    echo "   log file = /var/log/samba/log.%m" >> /etc/samba/smb.conf && \
+    echo "   max log size = 1000" >> /etc/samba/smb.conf && \
+    echo "   logging = file" >> /etc/samba/smb.conf && \
+    echo "   panic action = /usr/share/samba/panic-action %d" >> /etc/samba/smb.conf && \
+    echo "   server role = standalone server" >> /etc/samba/smb.conf && \
+    echo "   obey pam restrictions = yes" >> /etc/samba/smb.conf && \
+    echo "   unix password sync = yes" >> /etc/samba/smb.conf && \
+    echo "   passwd program = /usr/bin/passwd %u" >> /etc/samba/smb.conf && \
+    echo "   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* ." >> /etc/samba/smb.conf && \
+    echo "   pam password change = yes" >> /etc/samba/smb.conf && \
+    echo "   map to guest = bad user" >> /etc/samba/smb.conf && \
+    echo "   usershare allow guests = yes" >> /etc/samba/smb.conf && \
+    echo "[public]" >> /etc/samba/smb.conf && \
+    echo "   path = /public" >> /etc/samba/smb.conf && \
+    echo "   public = yes" >> /etc/samba/smb.conf && \
+    echo "   writable = yes" >> /etc/samba/smb.conf && \
+    echo "   guest ok = yes" >> /etc/samba/smb.conf && \
+    echo "   guest only = yes" >> /etc/samba/smb.conf
 
 # Copy discovery script
 COPY discovery.py /discovery.py
@@ -136,35 +112,25 @@ COPY exports /etc/exports
 # Create supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-
 # Expose ports
 EXPOSE 8384 22000 21027 111/udp 2049 445 139 1883 8883 8080 80
 
 # Set up MQTT directories and config
-RUN mkdir -p /var/log/mosquitto \
-    && mkdir -p /etc/mosquitto \
-    && mkdir -p /var/lib/mosquitto \
-    && chown -R mosquitto:mosquitto /var/log/mosquitto /etc/mosquitto /var/lib/mosquitto
+RUN mkdir -p /var/log/mosquitto /etc/mosquitto /var/lib/mosquitto && \
+    chown -R mosquitto:mosquitto /var/log/mosquitto /etc/mosquitto /var/lib/mosquitto
 
 # Copy MQTT config
 COPY mosquitto.conf /etc/mosquitto/conf.d/default.conf
-RUN chmod 644 /etc/mosquitto/conf.d/default.conf \
-    && chown mosquitto:mosquitto /etc/mosquitto/conf.d/default.conf
+RUN chmod 644 /etc/mosquitto/conf.d/default.conf && \
+    chown mosquitto:mosquitto /etc/mosquitto/conf.d/default.conf
 
-
-RUN mkdir synk
+# Copy synk scripts
+RUN mkdir -p ./synk/.ssh/
 COPY ./synk/glue.py ./synk/glue.py
 COPY ./synk/MultiNodeSync.py ./synk/MultiNodeSync.py
-
-RUN chmod +x ./synk/glue.py
-RUN chmod +x ./synk/MultiNodeSync.py
-
-#RUN cat ./keys/.ssh/id_rsa.pub >> ./synk/.ssh/authorized_keys
-RUN mkdir -p ./synk/.ssh/
-RUN chmod 700 ./synk/.ssh
-#RUN chmod 600 ./synk/.ssh/authorized_keys
-
-
+RUN chmod +x ./synk/glue.py ./synk/MultiNodeSync.py
 
 # Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
+
+
