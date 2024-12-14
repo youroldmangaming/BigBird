@@ -22,6 +22,7 @@ if [ $? -eq 0 ]; then
 
     # Copy the public key to the authorized_keys on the localhost
     ssh-copy-id -i "${KEY_FILE}.pub" "$ACCOUNT@localhost"
+    ssh-copy-id -i "${KEY_FILE}.pub"  "root@localhost"
 else
     echo "Failed to generate SSH key pair."
     exit 1
