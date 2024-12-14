@@ -1,5 +1,12 @@
 services:
-  storage-node:
+  storage-node-server:
+    build: .
+    volumes:
+      - shared:/shared
+    ports:
+      - "2222:22"
+
+  storage-node-client:
     image: storage-node
     build:
       context: .
@@ -12,7 +19,10 @@ services:
       - SYNCTHING_UID=1000
       - SYNCTHING_GID=1000
       - USERNAME=${USERNAME}
-      - SHARED_DIR=${SHARED_DIR}     
+      - SHARED_DIR=${SHARED_DIR}   
+      - CRON_TASK_1="0 1 * * * /data/pack-db.sh"
+      - CRON_TASK_2="0 3 * * * rsync -e 'ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' -aqx --numeric-ids rpi@<remote_server_ip>:/shared/ /shared/"
+
 #    user: "1000:1000"
     volumes:
       # Primary shared volumes
@@ -36,3 +46,9 @@ services:
       - NET_ADMIN
       - SYS_ADMIN
       - NET_RAW
+
+    depends_on:
+      - storage-node-server
+volumes:
+  shared:
+  ${PRIMARY_SYNC_PATH:-./shared}:
