@@ -1,4 +1,3 @@
-                                                                                                               
 import subprocess
 import os
 import logging
@@ -27,7 +26,6 @@ class MultiNodeSync:
         """
         self.config = self.load_config(config_path)
         self.local_hostname = socket.gethostname()
-        self.shared_dir = os.getenv('SHARED_DIR') 
         
         self.get_key()
         # Validate configuration
@@ -201,7 +199,7 @@ class MultiNodeSync:
             print(remote_path)
             print(self.config["shared_directory"])
             print("--------------------------------------")
-            
+
 
             rsync_cmd = [
                 'rsync',
