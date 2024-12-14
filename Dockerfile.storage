@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     rsync \
     nano \
     openssl \
+    openssh \
     kmod && \
     # Add ZeroTier repository and install
     curl -s 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' | gpg --dearmor > /usr/share/keyrings/zerotier.gpg && \
@@ -33,6 +34,24 @@ RUN apt-get update && apt-get install -y \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /root/.ssh
+
+# Copy the SSH keys into the container
+COPY ./keys/id_rsa /root/.ssh/id_rsa
+COPY ./keys/id_rsa.pub /root/.ssh/id_rsa.pub
+COPY ./keys/id_rsa.pub /root/.ssh/authorized_keys
+
+
+# Set permissions for the SSH keys
+RUN chmod 700 /root/.ssh && \
+    chmod 600 /root/.ssh/id_rsa && \
+    chmod 600 /root/.ssh/authorized_keys
+
+# Start the SSH service
+RUN /usr/sbin/sshd -D
+
+
 
 # Create rpcbind user and set up directories
 RUN addgroup --system messagebus && \
