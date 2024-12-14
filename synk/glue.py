@@ -23,7 +23,7 @@ class DynamicNodeConfigManager:
         self.username = os.getenv('USERNAME')
         self.api_token = '8dZCe3xyG4FBqp9uFir7nfx9yFP7i2jx'
         self.sync_interval = int(os.getenv('SYNC_INTERVAL', '60'))  # Set to 60 seconds
-        self.shared_dir = os.getenv('SHARED_DIR') 
+
         # Ensure config file exists
         self.initialize_config_file()
 
@@ -102,10 +102,8 @@ class DynamicNodeConfigManager:
             "ip": ip,
             "hostname": self.local_hostname,
             "username": self.username,
-            "remote_path": self.shared_dir
+            "remote_path": self.shared_directory
         }
-        print(url)
-        print(data)
 
         try:
             response = requests.post(url, headers=headers, data=json.dumps(data))
@@ -204,3 +202,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
