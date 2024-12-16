@@ -24,7 +24,7 @@ update_hosts() {
     jq -c '.nodes[]' "$JSON_FILE" | while IFS= read -r node; do
         HOSTNAME=$(echo "$node" | jq -r '.hostname')
         IP=$(echo "$node" | jq -r '.ip')
-        echo "$IP zt-$HOSTNAME" >> "$ZT_HOSTS_FILE"
+        echo "$IP $HOSTNAMEz" >> "$ZT_HOSTS_FILE"
     done
 
     echo "# END ZEROTIER NODES" >> "$ZT_HOSTS_FILE"
