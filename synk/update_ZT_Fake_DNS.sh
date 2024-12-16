@@ -36,7 +36,7 @@ update_hosts() {
 }
 
 # Set the frequency (in seconds) for reading the JSON file
-FREQUENCY=60  # Change this value as needed
+FREQUENCY=60*60  # Change this value as needed
 
 # Infinite loop to update hosts file at set frequency
 while true; do
