@@ -27,7 +27,10 @@ class MultiNodeSync:
         self.config = self.load_config(config_path)
         self.local_hostname = socket.gethostname()
         
-        self.get_key()
+        # self.get_key()
+        # this is no longer needed as we have the keys embedded on image creation now.
+        # may allow in the future updates to keys so leave the code in at the moment, but not active.
+
         # Validate configuration
         self.validate_config()
 
