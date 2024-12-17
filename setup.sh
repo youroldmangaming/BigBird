@@ -44,7 +44,9 @@ while true; do
         # Check if the shared folder exists
         if [ -d "$shared_folder" ]; then
             echo "The shared folder for user '$username' is located at: $shared_folder"
-            ../keys/gen2.sh $username 
+
+            ./keys/install_keys.sh $username 
+
             echo "distributing up keys"
             break  # Exit the loop if the shared folder exists
         else
@@ -182,3 +184,5 @@ var/
 EOL
 
 echo -e "\n${GREEN}Setup script completed successfully!${NC}"
+
+
